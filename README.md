@@ -34,11 +34,11 @@ WMI events which are only generated once the process has already been launched. 
 
 Simply running ProcessBouncer without customization might leave some risks and make you prone to false positives. But you can give it a try - preferably on a virtual test system that is not connected to production systems.
 
-![Starting ProcessBouncer powershell script](screenshots/pb-starting.png)  
+![Starting ProcessBouncer powershell script](./pb-starting.png)  
 
-![ProcessBouncer reacting on some processes created on the system](screenshots/pb-started.png?raw=true)
+![ProcessBouncer reacting on some processes created on the system](./pb-started.png?raw=true)
 
-![ProcessBouncer has blocked a malicious process started from an MS office application](screenshots/pb-inaction.png?raw=true)
+![ProcessBouncer has blocked a malicious process started from an MS office application](./pb-inaction.png?raw=true)
 
 ## Customization
 Well, if you have gone through the steps of initial configuration / customization (the lines with comments containing CONFIG! - you remember?!) you should have a basic idea for further enhancements and customizations that especially meet the requirements and specifics of your infrastructure. You might want to exclude further paths from being able to execute processes. There might be individual applications that require some whitelisting. There is way more to work on here. Please feel welcome to get back to me with feedback and suggestions for further improvements. Twitter @HolgerJunker is a good way to catch me.
