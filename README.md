@@ -1,8 +1,7 @@
 # ProcessBouncer
 ProcessBouncer is a PoC for blocking malware with a process-based approach. With a little fine-tuning this allows to effectively block most of current ransomware that is out there.
 
-![Process Bouncer](./pblogo.png)
-<img src="./pblogo.png" width="250" />
+![Process Bouncer](./pblogo.png?raw=true)
 
 _author:_ Holger Junker ([Twitter](https://twitter.com/HolgerJunker)), working at Bundesamt für Sicherheit in der Informationstechnik (BSI) ([website](https://www.bsi.bund.de)) during day, security researcher at night
 
