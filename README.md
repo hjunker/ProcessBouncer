@@ -47,6 +47,8 @@ Well, if you have gone through the steps of initial configuration / customizatio
 ## License and Credits
 license: this script is published under GPLv3 - please feel free to use and improve it.
 
+logo: © Can Stock Photo / Tribalium
+
 technical credits: the initial implementation was re-done based on the great script Process Spawn Control (PsC, [website](https://github.com/felixweyne/ProcessSpawnControl)) from Felix Weyne in 2018.
 
 musical credits: the work based on Felix's code was mainly done while listening to the great music of Mono Inc (e.g. Children of the Dark or Voices of Doom).
