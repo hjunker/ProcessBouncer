@@ -3,7 +3,7 @@ ProcessBouncer is a PoC for blocking malware with a process-based approach. With
 
 ![Process Bouncer](http://www.seculancer.de/pblogo.png)
 
-_author:_ Holger Junker ([Twitter](https://twitter.com/HolgerJunker)), working at Bundesamt für Sicherheit in der Informationstechnik (BSI) ([website](https://www.bsi.bund.de)) during day, security researcher at night
+_author:_ Holger Junker ([@HolgerJunker](https://twitter.com/HolgerJunker)) ([seculancer.de](http://www.seculancer.de))
 
 ## IMPORTANT: CHECK BEFORE USAGE!!!
 
