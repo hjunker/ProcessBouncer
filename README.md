@@ -44,7 +44,7 @@ Well, if you have gone through the steps of initial configuration / customizatio
 # Donate to support the further development and improvement of ProcessBouncer
 The greatest help is to give feedback to me. Send me your ProcessBouncer.log files, ask questions or suggest features on GitHub, let me know about additions you have made to config and/or code. THX!
 
-Please feel free to also support the further development of ProcessBouncer:
+You have been saved from a malware infection thanks to ProcessBouncer? Please feel free to give a spare dime/dollar/euro/... or two... It will be used to further enhance ProcessBouncer.
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=WLC2SHZL6SPNY)
 
 You can also support ProcessBouncer by donating hardware to keep operative backend and development systems running. Please take a look at (my list on, [amazon](https://www.amazon.de/hz/wishlist/ls/2FD1Z75K43I7M?ref_=wl_share))
