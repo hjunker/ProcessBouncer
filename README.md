@@ -9,8 +9,6 @@ _author:_ Holger Junker ([@HolgerJunker](https://twitter.com/HolgerJunker)) ([se
 
 PLEASE READ THE COMPLETE FILE BEFORE USING PROCESS BOUNCER. CHECK FOR ALL COMMENTS CONTAINING "CONFIG!" AND CHECK FOR THE OPTIONS THAT CAN BE DE-/ACTIVATED BY COMMENTING THE APPROPRIATE LINES IN THE SCRIPT.
 
-IN THE BEGINNING OF THE SCRIPT THERE IS A LINE STARTING "I UNDERSTAND THAT HEREBY I TAKE FULL RESPONSIBILITY OF RUNNING THE PROCESS BOUNCER POWERSHELL SCRIPT..." - COMMENT IT OUT TO MAKE THE SCRIPT WORK - BUT BE AWARE OF WHAT YOU COMMENT OUT HERE!!!
-
 ### ExecutionPolicy and Run as...
 Depending on your Windows version and various settings it might be necessary to run ProcessBouncer with Administrator's priviledges. If you run into the situation that you are not allowed running (unsigned) powershell scripts. Try running powershell as Administrator and type:
 	Set-ExecutionPolicy Unrestricted
@@ -44,7 +42,9 @@ Simply running ProcessBouncer without customization might leave some risks and m
 Well, if you have gone through the steps of initial configuration / customization (the lines with comments containing CONFIG! - you remember?!) you should have a basic idea for further enhancements and customizations that especially meet the requirements and specifics of your infrastructure. You might want to exclude further paths from being able to execute processes. There might be individual applications that require some whitelisting. There is way more to work on here. Please feel welcome to get back to me with feedback and suggestions for further improvements. Twitter @HolgerJunker is a good way to catch me.
 
 # Donate to support the further development and improvement of ProcessBouncer
-Please feel free to support the further development of ProcessBouncer:
+The greatest help is to give feedback to me. Send me your ProcessBouncer.log files, ask questions or suggest features on GitHub, let me know about additions you have made to config and/or code. THX!
+
+Please feel free to also support the further development of ProcessBouncer:
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=WLC2SHZL6SPNY)
 
 You can also support ProcessBouncer by donating hardware to keep operative backend and development systems running. Please take a look at (my list on, [amazon](https://www.amazon.de/hz/wishlist/ls/2FD1Z75K43I7M?ref_=wl_share))
