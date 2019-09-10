@@ -1,5 +1,5 @@
 # ProcessBouncer
-<img src="http://processbouncer.org/pblogo.png" width="150pt" style="float:left;">
+![ProcessBouncer Logo](./pblogo.png){:height="128px" width="100px"}
 
 ProcessBouncer is a PoC for blocking malware with a process-based approach. With a little fine-tuning this allows to effectively block most of current ransomware that is out there.
 
