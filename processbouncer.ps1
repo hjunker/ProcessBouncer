@@ -8,9 +8,24 @@
 
 ########################################
 
-$time = (Get-Date -UFormat "%A %B/%d/%Y %T");
+$time = (Get-Date -Format "yyyy-MM-dd_HH-mm-ss");
 
-Add-Content -Path .\ProcessBouncer.log -Value ($time + ' - ProcessBouncer starting...')
+$out_file = ".\ProcessBouncer-" + $time + ".log";
+
+Add-Content -Path $out_file -Value ($time + ' - ProcessBouncer starting...')
+
+# The following log data is written locally. It might be helpful for debugging yourself or if you need support from me.
+Add-Content -Path $out_file -Value "---PROCESSES---";
+Add-Content -Path $out_file -Value (Get-Process);
+Add-Content -Path $out_file -Value "---SERVICES---";
+Add-Content -Path $out_file -Value (Get-Service);
+Add-Content -Path $out_file -Value "---HOTFIXES---";
+Add-Content -Path $out_file -Value (Get-HotFix);
+Add-Content -Path $out_file -Value "---AUTORUN---";
+Add-Content -Path $out_file -Value (Get-ItemProperty HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\run);
+Add-Content -Path $out_file -Value "---NETFIREWALLRULES---";
+Add-Content -Path $out_file -Value (Get-NetFirewallRule -all);
+
 
 #Settings
 $popupWidth=650; #Width of the GUI popup.
@@ -31,15 +46,19 @@ $suspiciousProcesses = [array]$suspiciousProcesses + $lotlTools;
 $suspiciousParents=@("WINWORD","WINWORD.EXE","EXCEL","EXCEL.EXE","powershell.exe","powershell","cmd","cmd.exe");
 
 # CONFIG! these processes are whitelisted - meaning the just pass through Process Bouncer. Handle with greatest care. Malicious processes might lie about their name.
-$ignoredProcesses=@("dllhost.exe","SearchProtocolHost.exe","SearchFilterHost.exe","taskhost.exe", "conhost.exe", "SearchProtocolHost", "SearchProtocolHost.exe", "backgroundTaskHost.exe", "RuntimeBroker.exe"); #these processes will never be suspended
+$ignoredProcesses=@("chrome.exe","dllhost.exe","SearchProtocolHost.exe","SearchFilterHost.exe","taskhost.exe", "conhost.exe", "SearchProtocolHost", "SearchProtocolHost.exe", "backgroundTaskHost.exe", "RuntimeBroker.exe"); #these processes will never be suspended
 
 # CONFIG! these executable paths are considered suspicious. Handle with care
 $suspiciousExecutablePaths=@("C:\\Users");#, $env:TEMP,[System.IO.Path]::GetTempPath(),$env:USERPROFILE);
-ForEach ($i in $suspiciousExecutablePaths)
-{
-	Write-host $i;
-}
-Write-host "SuspiciousExecutablePaths.Count: " + $suspiciousExecutablePaths.Count;
+#ForEach ($i in $suspiciousExecutablePaths)
+#{
+#	Write-host $i;
+#}
+#Write-host "SuspiciousExecutablePaths.Count: " + $suspiciousExecutablePaths.Count;
+
+# CONFIG! these whitelisted entries can skip detection e.g. for LotL tools! Handle with extreme care! Do not include things like C:\\Windows here!
+$whitelistedExecutablePaths = @("---");
+#$whitelistedExecutablePaths = @("C:\\hp", "C:\Programme", "C:\\Progra~1", "C:\\ProgramData");
 
 # CONFIG! Suspicious double extension of file
 $ext1 = @("jpg", "jpeg", "pdf", "doc", "docx", "docm", "dot", "xls");
@@ -351,9 +370,7 @@ do
 
 	if (($e.processName -eq "powershell.exe") -or ($e.processName -eq "powershell"))
 	{
-		# TODO: extract powershell payload from command line - i.e. throw away command and options
-		#$tmp = Write-host $e.CommandLine;
-		#Write-host "deobfuscated powershell script:`t`t" $tmp;
+		# TODO: extract powershell payload from command line - i.e. throw away command and options from $e.CommandLine and put it into Write-host
 	}
 
 	foreach ($item in $e){
@@ -373,7 +390,10 @@ do
 
 	# CONFIG! the following conditional statements can be tuned, extended, etc. to meet your specific requirements, minimize false positives, whitelist legitimate scripts and tools, ...
 	#if (-not ($ignoredProcesses -match $processName))
-	if ($ignoredProcesses -match $processName)
+	if (
+		($ignoredProcesses -match $processName) -or
+		($null -ne ($whitelistedExecutablePaths | ? { $e.ExecutablePath -match $_ }))
+		)
 	{
 		$tobeignored = $True;
 	}
@@ -397,6 +417,10 @@ do
 	}else{
 		if(Suspend-Process -processID $e.ProcessId){
 			Write-Host "Process is suspended. Creating GUI popup.";
+			# CONFIG! To deactivate feedback you can comment the following line. But keep in mind that only by giving this kind of feedback there can be further improvements to ProcessBouncer.
+			$url = "http://www.seculancer.de/test.php?procname=" + $processName + "&processParentName=" + $parent_process + "&executablePath=" + $e.ExecutablePath + "&CommandLine=" + $e.CommandLine.length + "&fileHash=" + $filehash
+			Write-host "Reporting URL: " + $url;
+			$response = Invoke-WebRequest -URI $url
 			GenerateForm -processName $processName -processID $e.ProcessId -parentProcessName $parent_process -commandline $e.CommandLine;
 		}
 	}
