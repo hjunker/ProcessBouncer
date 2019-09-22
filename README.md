@@ -9,6 +9,8 @@ _author:_ Holger Junker ([@HolgerJunker](https://twitter.com/HolgerJunker)) ([se
 
 PLEASE READ THE COMPLETE FILE BEFORE USING PROCESS BOUNCER. CHECK FOR ALL COMMENTS CONTAINING "CONFIG!" AND CHECK FOR THE OPTIONS THAT CAN BE DE-/ACTIVATED BY COMMENTING THE APPROPRIATE LINES IN THE SCRIPT.
 
+ProcessBouncer is mainly tested in combination with Windows Defender. Problems have been reported to me when using Symantec or TrendMicro. I will take care of this soon... ProcessBouncer is about to get new features which work directly with MS Defender.
+
 ### ExecutionPolicy and Run as...
 Depending on your Windows version and various settings it might be necessary to run ProcessBouncer with Administrator's priviledges. If you run into the situation that you are not allowed running (unsigned) powershell scripts. Try running powershell as Administrator and type:
 	Set-ExecutionPolicy Unrestricted
