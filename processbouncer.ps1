@@ -57,8 +57,8 @@ $suspiciousExecutablePaths=@("C:\\Users");#, $env:TEMP,[System.IO.Path]::GetTemp
 #Write-host "SuspiciousExecutablePaths.Count: " + $suspiciousExecutablePaths.Count;
 
 # CONFIG! these whitelisted entries can skip detection e.g. for LotL tools! Handle with extreme care! Do not include things like C:\\Windows here!
-$whitelistedExecutablePaths = @("---");
-#$whitelistedExecutablePaths = @("C:\\hp", "C:\Programme", "C:\\Progra~1", "C:\\ProgramData");
+#$whitelistedExecutablePaths = @("---");
+$whitelistedExecutablePaths = @("C:\\hp", "C:\Programme", "C:\\Progra~1", "C:\\ProgramData", "C:\\Program Files (x86)\\Google\\Chrome\\Application", "C:\\Program Files\\Realtek\\Audio", "C:\\WINDOWS\\system32", "C:\\Program Files (x86)\\Microsoft\\Edge Dev\\Application", "C:\\Program Files (x86)\\Microsoft\\Edge Dev\\Application");
 
 # CONFIG! Suspicious double extension of file
 $ext1 = @("jpg", "jpeg", "pdf", "doc", "docx", "docm", "dot", "xls");
