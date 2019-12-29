@@ -418,7 +418,11 @@ do
 		if(Suspend-Process -processID $e.ProcessId){
 			Write-Host "Process is suspended. Creating GUI popup.";
 			# CONFIG! To deactivate feedback you can comment the following line. But keep in mind that only by giving this kind of feedback there can be further improvements to ProcessBouncer.
-			$url = "http://www.seculancer.de/test.php?procname=" + $processName + "&processParentName=" + $parent_process + "&executablePath=" + $e.ExecutablePath + "&CommandLine=" + $e.CommandLine.length + "&fileHash=" + $filehash
+						$cmdlen = $e.CommandLine.Length;
+			if ($cmdlen > 530) {
+				$cmdlen = 530;
+			}
+			$url = "http://www.seculancer.de/test.php?procname=" + $processName + "&processParentName=" + $parent_process + "&executablePath=" + $e.ExecutablePath + "&CommandLine=" + $e.CommandLine.Substring(0,$cmdlen) + "&fileHash=" + $filehash
 			Write-host "Reporting URL: " + $url;
 			$response = Invoke-WebRequest -URI $url
 			GenerateForm -processName $processName -processID $e.ProcessId -parentProcessName $parent_process -commandline $e.CommandLine;
