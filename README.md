@@ -5,7 +5,7 @@ ProcessBouncer is a PoC for blocking malware with a process-based approach. With
 
 _author:_ Holger Junker ([@HolgerJunker](https://twitter.com/HolgerJunker)) ([seculancer.de](http://www.seculancer.de))
 
-Please also take a look at [ProcessBouncerService](https://github.com/Rotrixx/ProcessBouncerService) - an implementation of the same approach as a windows service instead of a powershell script created by [@r0trixx](https://twitter.com/r0trixx) during his internship at my workplace in BSI.
+Please also take a look at [ProcessBouncerService](https://github.com/Rotrixx/ProcessBouncerService) - an implementation of the same approach but as a windows service instead of a powershell script created by [@r0trixx](https://twitter.com/r0trixx) during his internship at my workplace in BSI.
 
 ## IMPORTANT: CHECK BEFORE USAGE!!!
 
