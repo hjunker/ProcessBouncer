@@ -7,8 +7,13 @@ IMPORTANT: Please read this entire README file before using ProcessBouncer. Chec
 ProcessBouncer is basically a powershell script. Simply run processbouncer.ps1 to get started.
 
 <img src="./img/pb-starting.png" width="30%" />
+
+The powershell window you see will fill up with information on newly spawned processes over time.
 <img src="./img/pb-started.png" width="30%" />
+
+An alert pops up when a new process is created that ProcessBouncer categorizes as suspicious.
 <img src="./img/pb-inaction.png" width="30%" />
+The user can then see some further information and (if he is allowed to by the admin's configuration/customization) make a decision on running / suspending / terminating the process.
 
 Simply running ProcessBouncer without customization might leave some risks and make you prone to false positives. But you can give it a try - preferably on a virtual test system that is not connected to production systems.
 
