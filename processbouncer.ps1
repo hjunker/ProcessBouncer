@@ -1,20 +1,119 @@
 ########################################
 #
-# ProcessBouncer / RansomwareKiller - preventing ransomware with a simple script
+# ProcessBouncer - preventing ransomware with a simple script
 #
 # WARNING: Running this script shall prevent you from most of the current ransomware
-# samples that are out there. This script is not a replacement for anti virus software, endpoint detection, etc. - it is only an additional security measure
+# samples that are out there. This script is not a replacement for anti virus software,
+# endpoint detection, etc. - it is only an additional security measure
 # Everyone is advised to be careful and watch his or her clicks.
 
 ########################################
 
-$time = (Get-Date -Format "yyyy-MM-dd_HH-mm-ss");
 
+#
+# 1. settings (CONFIG section)
+#
+
+$popupWidth=650;
+$popupScreenBorderDistance=20;
+
+# logfile
+$time = (Get-Date -Format "yyyy-MM-dd_HH-mm-ss");
 $out_file = ".\ProcessBouncer-" + $time + ".log";
+
+# To enable / disable reporting suspicious findings to the given endpoint can be done by setting $reportfindings to $True / $False. deactivate feedback you can comment the following line. But keep in mind that only by giving this kind of feedback there can be further improvements to ProcessBouncer.
+$reportfindings = $False
+
+# URL of the endpoint where suspicious finding is reported to (if $reportfindings == $True)
+$endpointUrl = "http://www.seculancer.de/test.php"
+
+# These processes are considered suspicious mostly but there are further checks. Handle with care.
+# if you really need to run stuff like powershell or cmd, do not include them here. It might be better for you to catch them with suspicious parents - e.g. a svchost.exe called from powershell might be worth blocking.
+$suspiciousProcesses=@("powershell.exe", "powershell","cmd.exe", "cmd");
+
+# These LotL tools (meaning: living off the land tools already present on the victim's system that come handy for an attacker - not the great band lord of the lost)
+$lotlTools=@("at", "at.exe", "bitsadmin", "bitsadmin.exe", "certutil", "certutil.exe", "cmd", "cmd.exe", "cmstp", "cmstp.exe", "control", "control.exe", "copy", "copy.exe", "csc", "csc.exe", "cscript", "cscript.exe", "curl", "curl.exe", "eqnedt32", "eqnedt32.exe", "hh", "hh.exe", "installutil", "installutil.exe", "javaw", "javaw.exe", "msbuild", "msbuild.exe", "mshta", "mshta.exe", "msiexec", "msiexec.exe", "msxsl", "msxsl.exe", "net", "net.exe", "netsh", "netsh.exe", "powershell", "powershell.exe", "psexec", "psexec.exe", "reg", "reg.exe", "regasm", "regasm.exe", "regedit", "regedit.exe", "regsvcs", "regsvcs.exe", "regsvr32", "regsvr32.exe", "remcos", "remcos.exe", "rundll32", "rundll32.exe", "runonce", "runonce.exe", "sc", "sc.exe", "schtasks", "schtasks.exe", "streams", "streams.exe", "tasklist", "tasklist.exe", "whoami", "whoami.exe", "winexesvc", "winexesvc.exe", "wmic", "wmic.exe", "wscript", "wscript");
+
+# add # at the beginning of the following line to NOT check for LotL tools in suspiciousProcesses
+$suspiciousProcesses = [array]$suspiciousProcesses + $lotlTools;
+
+# These processes are considered suspicious when they become parents by creating a child process. Handle with care.
+$suspiciousParents=@("WINWORD","WINWORD.EXE","EXCEL","EXCEL.EXE","powershell.exe","powershell","cmd","cmd.exe");
+
+# these processes are whitelisted - meaning the just pass through Process Bouncer. Handle with greatest care. Malicious processes might lie about their name.
+$ignoredProcesses=@("chrome.exe","dllhost.exe","SearchProtocolHost.exe","SearchFilterHost.exe","taskhost.exe", "conhost.exe", "SearchProtocolHost", "SearchProtocolHost.exe", "backgroundTaskHost.exe", "RuntimeBroker.exe"); #these processes will never be suspended
+
+# these executable paths are considered suspicious. Handle with care
+$suspiciousExecutablePaths=@("C:\\Users");#, $env:TEMP,[System.IO.Path]::GetTempPath(),$env:USERPROFILE);
+
+# these whitelisted entries can skip detection e.g. for LotL tools! Handle with extreme care! Do not include things like C:\\Windows or C:\\WINDOWS\\system32 here!
+#$whitelistedExecutablePaths = @("---");
+$whitelistedExecutablePaths = @("C:\\hp", "C:\Programme", "C:\\Progra~1", "C:\\ProgramData", "C:\\Program Files (x86)\\Google\\Chrome\\Application", "C:\\Program Files\\Realtek\\Audio", "C:\\Program Files (x86)\\Microsoft\\Edge Dev\\Application");
+
+# Suspicious double extension of file
+$ext1 = @("jpg", "jpeg", "pdf", "doc", "docx", "docm", "dot", "xls");
+$ext2 = @("exe", "com", "ps1", "dll", "bat", "pif");
+ForEach ($e1 in $ext1)
+	{
+		ForEach ($e2 in $ext2)
+		{
+			[array]$DoubleExtensions += $e1 + "." + $e2;
+		}
+	}
+
+# length which seems suspicious for some calls, might be e.g. from powershell payload
+$suspiciousCmdLen = 20
+
+# Test the default for TimeSpan is (0,0,0,0,750). Shorter time spans can result in increased system load. Longer time spans can result in blind spots with regards to very short-lived processes (which might apply to malicious powershell calls). Handle with a lot of care.
+$new_process_check_interval = New-Object System.TimeSpan(0,0,0,0,750); #public TimeSpan (int days, int hours, int minutes, int seconds, int milliseconds);
+
+#
+# 2. setup - write some things to files from registry, ...
+#
 
 Add-Content -Path $out_file -Value ($time + ' - ProcessBouncer starting...')
 
 # The following log data is written locally. It might be helpful for debugging yourself or if you need support from me.
+$(Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion' CurrentMajorVersionNumber).CurrentMajorVersionNumber
+
+Add-Content -Path $out_file -Value ("Windows Major Version: " + $(Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion' CurrentMajorVersionNumber).CurrentMajorVersionNumber);
+Add-Content -Path $out_file -Value ("Windows Minor Version: " + $(Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion' CurrentMinorVersionNumber).CurrentMinorVersionNumber);
+#Add-Content -Path $out_file -Value ("HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\Word\Security: " + $(Get-ItemProperty -Path 'Registry::HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\Word\Security' VBAWarnings).VBAWarnings);
+#Add-Content -Path $out_file -Value ("HKEY_CURRENT_USER\software\policies\microsoft\office\16.0\excel\security: " + $(Get-ItemProperty -Path 'Registry::HKEY_CURRENT_USER\software\policies\microsoft\office\16.0\excel\security' VBAWarnings).VBAWarnings);
+#Add-Content -Path $out_file -Value ("HKEY_CURRENT_USER\software\policies\microsoft\office\16.0\excel\security: " + $(Get-ItemProperty -Path 'Registry::HKEY_CURRENT_USER\software\policies\microsoft\office\16.0\excel\security' VBAWarnings).VBAWarnings);
+#Add-Content -Path $out_file -Value ("HKEY_CURRENT_USER\software\policies\microsoft\office\16.0\powerpoint\security: " + $(Get-ItemProperty -Path 'Registry::HKEY_CURRENT_USER\software\policies\microsoft\office\16.0\powerpoint\security' VBAWarnings).VBAWarnings);
+#Add-Content -Path $out_file -Value ("HKEY_CURRENT_USER\software\policies\microsoft\office\16.0\word\security: " + $(Get-ItemProperty -Path 'Registry::HKEY_CURRENT_USER\software\policies\microsoft\office\16.0\word\security' VBAWarnings).VBAWarnings);
+#Add-Content -Path $out_file -Value ("HKEY_CURRENT_USER\software\policies\microsoft\office\16.0\powerpoint\security: " + $(Get-ItemProperty -Path 'Registry::HKEY_CURRENT_USER\software\policies\microsoft\office\16.0\powerpoint\security' VBAWarnings).VBAWarnings);
+#Add-Content -Path $out_file -Value ("HKEY_CURRENT_USER\software\policies\microsoft\office\16.0\word\security: " + $(Get-ItemProperty -Path 'Registry::HKEY_CURRENT_USER\software\policies\microsoft\office\16.0\word\security' VBAWarnings).VBAWarnings);
+Add-Content -Path $out_file -Value ("HKEY_CURRENT_USER\Environment: " + $(Get-ItemProperty -Path 'Registry::HKEY_CURRENT_USER\Environment' Path).Path);
+Add-Content -Path $out_file -Value ("HKEY_CURRENT_USER\Environment: " + $(Get-ItemProperty -Path 'Registry::HKEY_CURRENT_USER\Environment' TEMP).TEMP);
+Add-Content -Path $out_file -Value ("HKEY_CURRENT_USER\Environment: " + $(Get-ItemProperty -Path 'Registry::HKEY_CURRENT_USER\Environment' TMP).TMP);
+
+#cmd /c assoc
+
+# TODO: Create undo-file when making changes!
+#cmd /c ftype htafile
+#cmd /c ftype WSHFile
+#cmd /c ftype batfile
+#cmd /c ftype htafile="%SystemRoot%\system32\NOTEPAD.EXE" "%1"
+#cmd /c ftype WSHFile="%SystemRoot%\system32\NOTEPAD.EXE" "%1"
+#cmd /c ftype batfile="%SystemRoot%\system32\NOTEPAD.EXE" "%1"
+
+#:: Block Office applications from creating child processes
+#powershell.exe Add-MpPreference -AttackSurfaceReductionRules_Ids D4F940AB-401B-4EFC-AADC-AD5F3C50688A -AttackSurfaceReductionRules_Actions Enabled
+#:: Block Office applications from injecting code into other processes
+#powershell.exe Add-MpPreference -AttackSurfaceReductionRules_Ids 75668C1F-73B5-4CF0-BB93-3ECF5CB7CC84 -AttackSurfaceReductionRules_Actions enable
+#:: Block Win32 API calls from Office macro
+#powershell.exe Add-MpPreference -AttackSurfaceReductionRules_Ids 92E97FA1-2EDF-4476-BDD6-9DD0B4DDDC7B -AttackSurfaceReductionRules_Actions enable
+#:: Block Office applications from creating executable content
+#powershell.exe Add-MpPreference -AttackSurfaceReductionRules_Ids '3B576869-A4EC-4529-8536-B80A7769E899' -AttackSurfaceReductionRules_Actions enable
+#:: Block execution of potentially obfuscated scripts
+#powershell.exe Add-MpPreference -AttackSurfaceReductionRules_Ids 5BEB7EFE-FD9A-4556-801D-275E5FFC04CC -AttackSurfaceReductionRules_Actions Enabled
+#:: Block executable content from email client and webmail
+#powershell.exe Add-MpPreference -AttackSurfaceReductionRules_Ids BE9BA2D9-53EA-4CDC-84E5-9B1EEEE46550 -AttackSurfaceReductionRules_Actions Enabled
+#:: Block JavaScript or VBScript from launching downloaded executable content
+#powershell.exe Add-MpPreference -AttackSurfaceReductionRules_Ids D3E037E1-3EB8-44C8-A917-57927947596D -AttackSurfaceReductionRules_Actions Enabled
+
 Add-Content -Path $out_file -Value "---PROCESSES---";
 Add-Content -Path $out_file -Value (Get-Process);
 Add-Content -Path $out_file -Value "---SERVICES---";
@@ -27,56 +126,8 @@ Add-Content -Path $out_file -Value "---NETFIREWALLRULES---";
 Add-Content -Path $out_file -Value (Get-NetFirewallRule -all);
 
 
-#Settings
-$popupWidth=650; #Width of the GUI popup.
-$popupScreenBorderDistance=20;
-
-# CONFIG! These processes are considered suspicious mostly but there are further checks. Handle with care.
-# if you really need to run stuff like powershell or cmd, do not include them here. It might be better for you to catch them with suspicious parents - e.g. a svchost.exe called from powershell might be worth blocking.
-$suspiciousProcesses=@("powershell.exe", "powershell","cmd.exe", "cmd","regedit.exe");
-#$suspiciousProcesses=@("regedit.exe");
-
-
-# CONFIG! These LotL tools (meaning: living off the land tools already present on the victim's system that come handy for an attacker - not the great band lord of the lost)
-$lotlTools=@("msiexec.exe","certutil.exe","bitadmin.exe","psexec.exe","winexesvc","remcos.exe","wscript.exe","cscript.exe","reg.exe","sc.exe","netsh","whoami", "copy", "net", "tasklist","schtasks","streams.exe");
-# CONFIG! add # at the beginning of the following line to NOT check for LotL tools in suspiciousProcesses
-$suspiciousProcesses = [array]$suspiciousProcesses + $lotlTools;
-
-# CONFIG! These processes are considered suspicious when they become parents by creating a child process. Handle with care.
-$suspiciousParents=@("WINWORD","WINWORD.EXE","EXCEL","EXCEL.EXE","powershell.exe","powershell","cmd","cmd.exe");
-
-# CONFIG! these processes are whitelisted - meaning the just pass through Process Bouncer. Handle with greatest care. Malicious processes might lie about their name.
-$ignoredProcesses=@("chrome.exe","dllhost.exe","SearchProtocolHost.exe","SearchFilterHost.exe","taskhost.exe", "conhost.exe", "SearchProtocolHost", "SearchProtocolHost.exe", "backgroundTaskHost.exe", "RuntimeBroker.exe"); #these processes will never be suspended
-
-# CONFIG! these executable paths are considered suspicious. Handle with care
-$suspiciousExecutablePaths=@("C:\\Users");#, $env:TEMP,[System.IO.Path]::GetTempPath(),$env:USERPROFILE);
-#ForEach ($i in $suspiciousExecutablePaths)
-#{
-#	Write-host $i;
-#}
-#Write-host "SuspiciousExecutablePaths.Count: " + $suspiciousExecutablePaths.Count;
-
-# CONFIG! these whitelisted entries can skip detection e.g. for LotL tools! Handle with extreme care! Do not include things like C:\\Windows here!
-#$whitelistedExecutablePaths = @("---");
-$whitelistedExecutablePaths = @("C:\\hp", "C:\Programme", "C:\\Progra~1", "C:\\ProgramData", "C:\\Program Files (x86)\\Google\\Chrome\\Application", "C:\\Program Files\\Realtek\\Audio", "C:\\WINDOWS\\system32", "C:\\Program Files (x86)\\Microsoft\\Edge Dev\\Application", "C:\\Program Files (x86)\\Microsoft\\Edge Dev\\Application");
-
-# CONFIG! Suspicious double extension of file
-$ext1 = @("jpg", "jpeg", "pdf", "doc", "docx", "docm", "dot", "xls");
-$ext2 = @("exe", "com", "ps1", "dll", "bat", "pif");
-ForEach ($e1 in $ext1)
-	{
-		ForEach ($e2 in $ext2)
-		{
-			[array]$DoubleExtensions += $e1 + "." + $e2;
-		}
-	}
-#Write-host "DoubleExtensions: " + $DoubleExtensions.Count;
-
-# CONFIG! / TEST the default for TimeSpan is (0,0,0,0,750). Shorter time spans can result in increased system load. Longer time spans can result in blind spots with regards to very short-lived processes (which applies to lots of malicious powershell calls). Handle with a lot of care.
-$new_process_check_interval = New-Object System.TimeSpan(0,0,0,0,750); #public TimeSpan (int days, int hours, int minutes, int seconds, int milliseconds);
-
 #
-# 1. Functionality to suspend and resume processes
+# 3. Functionality to suspend and resume processes
 # Source of this function: Poshcode, Joel Bennett 
 #
 Add-Type -Name Threader -Namespace "" -Member @"
@@ -140,15 +191,25 @@ function Resume-Process($processID) {
 	}
 }
 
+# TODO: Terminate suspicious processes instead of just keeping them suspended
+function Terminate-Process($processID) {
+	if(($pProc = [Threader]::OpenProcess("SuspendResume", $false, $processID)) -ne [IntPtr]::Zero){
+		Write-Host "Trying to terminate process: $processID"
+		Write-Host ""
+		$result = [Threader]::TerminateProcess($pProc)
+		if($result -ne 0) {
+			Write-Error "Failed to terminate. TerminateProcess returned: $result"
+		}
+		[Threader]::CloseHandle($pProc) | out-null
+	} else {
+		Write-Error "Unable to open process. Process doesn't exist anymore?"
+	}
+}
+
 #
-# 2. Functionality to create user interface popup dialog
+# 4. Functionality to create user interface popup dialog
 #
-# This will be enhanced in the future.
-#  - The admin will be able to deactivate the resume function.
-#  - Instead of suspending it will also be possible to terminate suspicious processes.
-#  - [WARNING!] The feature to resume a process should not be offered for a regular user! This is meant to be used for testing in this early stage of ProcessBouncer only!!!
-#  - [CONFIG!] Remove the respective line in the section entitled 'add controls to form' to remove e.g. the resume button from the gui!
-#
+
 function GenerateForm($processName,$processID,$parentProcessName) {
 	[reflection.assembly]::loadwithpartialname("System.Windows.Forms") | Out-Null;
 	[reflection.assembly]::loadwithpartialname("System.Drawing") | Out-Null;
@@ -157,6 +218,7 @@ function GenerateForm($processName,$processID,$parentProcessName) {
 	$bounds = $screen.Bounds;
 	 
 	$mainForm = New-Object System.Windows.Forms.Form;
+	$mainForm.TopMost = $True
 	$labelProcessRun = New-Object System.Windows.Forms.Label;
 	$labelRunningProcess = New-Object System.Windows.Forms.Label;
 	$labelProcessID = New-Object System.Windows.Forms.Label;
@@ -172,13 +234,13 @@ function GenerateForm($processName,$processID,$parentProcessName) {
 
 	$handler_resumeButton_Click={ 
 		[int]$processToResume=[convert]::ToInt32($this.Tag);
-		Add-Content -Path .\ProcessBouncer.log -Value "Process resumed by user.";
+		Add-Content -Path $out_file -Value "Process resumed by user.";
 		Resume-Process -processID $processToResume
 		$this.findform().close();
 
 	}
 	$handler_suspendButton_Click={
-		Add-Content -Path .\ProcessBouncer.log -Value "Process kept suspended by user.";
+		Add-Content -Path $out_file -Value "Process kept suspended by user.";
 		$this.findform().close();
 	}
 
@@ -324,7 +386,7 @@ function GenerateForm($processName,$processID,$parentProcessName) {
 }
 
 #
-# 3. Functionality to monitor newly created processes & interact with the suspend/resume functionality.
+# 5. Functionality to monitor newly created processes & interact with the suspend/resume functionality.
 # 	 This makes use of Windows Management Instrumentation to get information about newly created processes.
 #
 
@@ -358,7 +420,8 @@ do
 	$filehash = "n/a";
 	if ($e.ExecutablePath -ne $Null)
 	{
-		$filehash = Get-FileHash $e.ExecutablePath -Algorithm SHA384
+		$filehash = (Get-FileHash $e.ExecutablePath -Algorithm SHA256).Hash;
+        #$filehash = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
 	}
 	Write-host "File Hash:`t`t" $filehash;
 	#$itemproperties = Get-ItemProperty $e.ExecutablePath | Format-List;
@@ -383,12 +446,12 @@ do
 	Write-host "CommandLine:`t" $e.CommandLine;
 
 	$time = (Get-Date -UFormat "%A %B/%d/%Y %T");
-	Add-Content -Path .\ProcessBouncer.log -Value ($time + "|" + $e.ProcessId + "|" + $processName + "|" + $parent_process + "|" + $e.ExecutablePath + "|" + $filehash + "|" + $e.CommandLine);
+	Add-Content -Path $out_file -Value ($time + "|" + $e.ProcessId + "|" + $processName + "|" + $parent_process + "|" + $e.ExecutablePath + "|" + $filehash + "|" + $e.CommandLine);
 
 	$tobeignored = $False;
 	$tobechecked = $False;
 
-	# CONFIG! the following conditional statements can be tuned, extended, etc. to meet your specific requirements, minimize false positives, whitelist legitimate scripts and tools, ...
+	# the following conditional statements can be tuned, extended, etc. to meet your specific requirements, minimize false positives, whitelist legitimate scripts and tools, ...
 	#if (-not ($ignoredProcesses -match $processName))
 	if (
 		($ignoredProcesses -match $processName) -or
@@ -405,7 +468,7 @@ do
 	   #($suspiciousExecutablePaths -match $e.ExecutablePath) -or
 	   ($null -ne ($suspiciousExecutablePaths | ? { $e.ExecutablePath -match $_ })) -or
 	   ($null -ne ($DoubleExtensions | ? { $e.ExecutablePath -match $_ })) -or
-	   ($e.CommandLine.length -gt 20)
+	   ($e.CommandLine.length -gt $suspiciousCmdLen)
 	   )
 	   {
 	   	$tobechecked = $True;
@@ -417,15 +480,18 @@ do
 	}else{
 		if(Suspend-Process -processID $e.ProcessId){
 			Write-Host "Process is suspended. Creating GUI popup.";
-			# CONFIG! To deactivate feedback you can comment the following line. But keep in mind that only by giving this kind of feedback there can be further improvements to ProcessBouncer.
-						$cmdlen = $e.CommandLine.Length;
-			if ($cmdlen > 530) {
-				$cmdlen = 530;
-			}
-			$url = "http://www.seculancer.de/test.php?procname=" + $processName + "&processParentName=" + $parent_process + "&executablePath=" + $e.ExecutablePath + "&CommandLine=" + $e.CommandLine.Substring(0,$cmdlen) + "&fileHash=" + $filehash
-			Write-host "Reporting URL: " + $url;
-			$response = Invoke-WebRequest -URI $url
+			if($reportfindings -match $True){
+				$cmdlen = $e.CommandLine.Length;
+				if ($cmdlen > 530) {
+					$cmdlen = 530;
+				}
+				$url = $endpointUrl + "?procname=" + $processName + "&processParentName=" + $parent_process + "&executablePath=" + $e.ExecutablePath + "&CommandLine=" + $e.CommandLine.Substring(0,$cmdlen) + "&fileHash=" + $filehash
+				#Write-host "Reporting URL: " + $url;
+				$response = Invoke-WebRequest -URI $url
+				}
 			GenerateForm -processName $processName -processID $e.ProcessId -parentProcessName $parent_process -commandline $e.CommandLine;
+		}else{
+			Write-Host "error during handling of suspicious process."
 		}
 	}
 
