@@ -9,7 +9,7 @@ Please also take a look at [ProcessBouncerService](https://github.com/Rotrixx/Pr
 
 ## IMPORTANT: CHECK BEFORE USAGE!!!
 
-PLEASE READ THE COMPLETE FILE BEFORE USING PROCESS BOUNCER. CHECK FOR ALL COMMENTS CONTAINING "CONFIG!" AND CHECK FOR THE OPTIONS THAT CAN BE DE-/ACTIVATED BY COMMENTING THE APPROPRIATE LINES IN THE SCRIPT.
+PLEASE READ THE COMPLETE FILE BEFORE USING PROCESS BOUNCER. CHECK THE SECTION MARKED "1. settings (CONFIG section)" FOR ADJUSTING PROCESSBOUNCER TO YOUR INDIVIDUAL NEEDS.
 
 ProcessBouncer is mainly tested in combination with Windows Defender. Problems have been reported to me when using Symantec or TrendMicro. I will take care of this soon... ProcessBouncer is about to get new features which work directly with MS Defender.
 
@@ -20,12 +20,13 @@ Depending on your Windows version and various settings it might be necessary to 
 Please refer to https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.security/set-executionpolicy?view=powershell-6 for further information.
 
 ### Sign your customized ProcessBouncer script
-No matter whether you run ProcessBouncer as Administrator or a regular user, you should configure your windows system(s) to execute only signed powershell scripts.
+No matter whether you run ProcessBouncer as Administrator or a regular user, you should 
+ure your windows system(s) to execute only signed powershell scripts.
 
 TODO: Well, I am gonna have to document this soon, maybe based on a writeup like this one: https://www.scriptinglibrary.com/languages/powershell/how-to-sign-a-powershell-script/
 
 ## Technical details
-While this script is running (no admin permissions shall be required) this should protect the user from typical ransomware infections. This is accomplished by using _Windows Management Instrumentation (WMI)_ to get notified (asynchronously get events) on newly started processes and check some of their characteristics for things that are probably of malicious nature. There are various options to choose and to extend for making the script work best. Please check and tune the included white- and blacklists carefully. Once a process is rated as suspicious it is suspended / terminated (CONFIG!). A GUI popup is shown to the user to inform him that it might be the time to take his hands of his keyboard and call the IT department. If you configure Process Bouncer to only suspend the suspicious process, you can e.g. set up a remote-session and check the process that is still running... and hey... you are on the front line of cyber defense... and you are winning!
+While this script is running (no admin permissions shall be required) this should protect the user from typical ransomware infections. This is accomplished by using _Windows Management Instrumentation (WMI)_ to get notified (asynchronously get events) on newly started processes and check some of their characteristics for things that are probably of malicious nature. There are various options to choose and to extend for making the script work best. Please check and tune the included white- and blacklists carefully. Once a process is rated as suspicious it is suspended / terminated. A GUI popup is shown to the user to inform him that it might be the time to take his hands of his keyboard and call the IT department. If you configure Process Bouncer to only suspend the suspicious process, you can e.g. set up a remote-session and check the process that is still running... and hey... you are on the front line of cyber defense... and you are winning!
 
 ## Limitations
 
@@ -43,7 +44,7 @@ Simply running ProcessBouncer without customization might leave some risks and m
 ![ProcessBouncer has blocked a malicious process started from an MS office application](./pb-inaction.png?raw=true)
 
 ## Customization
-Well, if you have gone through the steps of initial configuration / customization (the lines with comments containing CONFIG! - you remember?!) you should have a basic idea for further enhancements and customizations that especially meet the requirements and specifics of your infrastructure. You might want to exclude further paths from being able to execute processes. There might be individual applications that require some whitelisting. There is way more to work on here. Please feel welcome to get back to me with feedback and suggestions for further improvements. Twitter @HolgerJunker is a good way to catch me.
+Well, if you have gone through the steps of initial configuration / customization (the config section mentioned earlier - you remember?!) you should have a basic idea for further enhancements and customizations that especially meet the requirements and specifics of your infrastructure. You might want to exclude further paths from being able to execute processes. There might be individual applications that require some whitelisting. There is way more to work on here. Please feel welcome to get back to me with feedback and suggestions for further improvements. Twitter @HolgerJunker is a good way to catch me.
 
 # Donate to support the further development and improvement of ProcessBouncer
 The greatest help is to give feedback to me. Send me your ProcessBouncer.log files, ask questions or suggest features on GitHub, let me know about additions you have made to config and/or code. THX!
