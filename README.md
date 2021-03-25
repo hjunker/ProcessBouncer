@@ -1,18 +1,14 @@
 # ProcessBouncer
 ProcessBouncer is a PoC for blocking malware with a process-based approach. With a little fine-tuning this allows to effectively block most of current ransomware that is out there.
 
-<img src="./img/pb-starting.png" width="30%" /><img src="./img/pb-started.png" width="30%" /><img src="./img/pb-inaction.png" width="30%" />
-
 ## Run ProcessBouncer with default configuration
 IMPORTANT: Please read this entire README file before using ProcessBouncer. Check the section marked "1. settings (CONFIG section)" for adjusting ProcessBouncer to your individual needs.
 
 Simply running ProcessBouncer without customization might leave some risks and make you prone to false positives. But you can give it a try - preferably on a virtual test system that is not connected to production systems.
 
-![Starting ProcessBouncer powershell script](./img/pb-starting.png)  
-
-![ProcessBouncer reacting on some processes created on the system](./img/pb-started.png?raw=true)
-
-![ProcessBouncer has blocked a malicious process started from an MS office application](./img/pb-inaction.png?raw=true)
+<img src="./img/pb-starting.png" width="30%" />
+<img src="./img/pb-started.png" width="30%" />
+<img src="./img/pb-inaction.png" width="30%" />
 
 ### ExecutionPolicy and Run as...
 Depending on your Windows version and various settings it might be necessary to run ProcessBouncer with Administrator's priviledges. If you run into the situation that you are not allowed running (unsigned) powershell scripts. Try running powershell as Administrator and type:
