@@ -49,7 +49,7 @@ $suspiciousExecutablePaths=@("C:\\Users");#, $env:TEMP,[System.IO.Path]::GetTemp
 
 # these whitelisted entries can skip detection e.g. for LotL tools! Handle with extreme care! Do not include things like C:\\Windows or C:\\WINDOWS\\system32 here!
 #$whitelistedExecutablePaths = @("---");
-$whitelistedExecutablePaths = @("C:\\hp", "C:\Programme", "C:\\Progra~1", "C:\\ProgramData", "C:\\Program Files (x86)\\Google\\Chrome\\Application", "C:\\Program Files\\Realtek\\Audio", "C:\\Program Files (x86)\\Microsoft\\Edge Dev\\Application");
+$whitelistedExecutablePaths = @("C:\\hp", "C:\Programme", "C:\\Progra~1", "C:\\ProgramData", "C:\\Program Files (x86)\\Google\\Chrome\\Application", "C:\\Program Files\\Realtek\\Audio", "C:\\Program Files (x86)\\Microsoft\\Edge Dev\\Application", "C:\\Windows", "C:\\WINDOWS\\system32", "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories");
 
 # Suspicious double extension of file
 $ext1 = @("jpg", "jpeg", "pdf", "doc", "docx", "docm", "dot", "xls");
@@ -472,25 +472,60 @@ do
 	# the following conditional statements can be tuned, extended, etc. to meet your specific requirements, minimize false positives, whitelist legitimate scripts and tools, ...
 	#if (-not ($ignoredProcesses -match $processName))
 	if (
-		($ignoredProcesses -match $processName) -or
+		($ignoredProcesses -match $processName)
+		)
+	{
+		$tobeignored = $True;
+		Write-Host "-- ignoredProcesses match";
+	}
+
+	if (
 		($null -ne ($whitelistedExecutablePaths | ? { $e.ExecutablePath -match $_ }))
 		)
 	{
 		$tobeignored = $True;
+		Write-Host "-- whitelistedExecutablePaths match";
 	}
 
 	if (
-	   #($suspiciousProcesses -match $processName) -or
-	   ($null -ne ($suspiciousProcesses | ? { $processName -match $_ })) -or
-	   ($suspiciousParents -match $parent_process) -or
-	   #($suspiciousExecutablePaths -match $e.ExecutablePath) -or
-	   ($null -ne ($suspiciousExecutablePaths | ? { $e.ExecutablePath -match $_ })) -or
-	   ($null -ne ($DoubleExtensions | ? { $e.ExecutablePath -match $_ })) -or
-	   ($e.CommandLine.length -gt $suspiciousCmdLen)
+	   ($null -ne ($suspiciousProcesses | ? { $processName -match $_ }))
 	   )
 	   {
 	   	$tobechecked = $True;
+	   	Write-Host "-- suspiciousProcesses match";
 	   }
+
+	if (
+	   ($suspiciousParents -match $parent_process)
+	   )
+	   {
+	   	$tobechecked = $True;
+	   	Write-Host "-- suspiciousParents match";
+	   }
+
+	   if (
+	   ($null -ne ($suspiciousExecutablePaths | ? { $e.ExecutablePath -match $_ }))
+	   )
+	   {
+	   	$tobechecked = $True;
+	   	Write-Host "-- suspiciousExecutablePaths match";
+	   }
+
+	   if (
+	   ($null -ne ($DoubleExtensions | ? { $e.ExecutablePath -match $_ }))
+	   )
+	   {
+	   	$tobechecked = $True;
+	   	Write-Host "-- doubleExtensions match";
+	   }
+
+#	   if (
+#	   ($e.CommandLine.length -gt $suspiciousCmdLen)
+#	   )
+#	   {
+#	   	$tobechecked = $True;
+#	   	Write-Host "-- suspiciousCmdLen match";
+#	   }
 
 	if (($tobeignored -match $True) -and ($tobechecked -match $False))
 	#if (($tobechecked -match $False))
