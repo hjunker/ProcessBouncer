@@ -14,6 +14,7 @@
 # 1. settings (CONFIG section)
 #
 
+$showPopup = $True
 $popupWidth=650;
 $popupScreenBorderDistance=20;
 
@@ -210,7 +211,7 @@ function Terminate-Process($processID) {
 # 4. Functionality to create user interface popup dialog
 #
 
-function GenerateForm($processName,$processID,$parentProcessName) {
+#function GenerateForm($processName,$processID,$parentProcessName) {
 	[reflection.assembly]::loadwithpartialname("System.Windows.Forms") | Out-Null;
 	[reflection.assembly]::loadwithpartialname("System.Drawing") | Out-Null;
 
@@ -233,15 +234,25 @@ function GenerateForm($processName,$processID,$parentProcessName) {
 	}
 
 	$handler_resumeButton_Click={ 
-		[int]$processToResume=[convert]::ToInt32($this.Tag);
-		Add-Content -Path $out_file -Value "Process resumed by user.";
-		Resume-Process -processID $processToResume
-		$this.findform().close();
-
+		if ($listBox.SelectedItem -ne $null){
+			#[int]$processToResume=[convert]::ToInt32($this.Tag);
+			$selectedId = $listBox.SelectedItem.substring($listBox.SelectedItem.IndexOf('(')+1,$listBox.SelectedItem.IndexOf(')')-$listBox.SelectedItem.IndexOf('(')-1);
+			#[int]$processToResume=[convert]::ToInt32($listBox.SelectedItem);
+			[int]$processToResume=[convert]::ToInt32($selectedId);
+			$outstr = "Process " + $listBox.SelectedItem + " resumed by user.";
+			Add-Content -Path $out_file -Value $outstr;
+			$listBox.Items.Remove($listBox.SelectedItem);
+			Resume-Process -processID $processToResume
+			#$this.findform().close();
+		}
 	}
 	$handler_suspendButton_Click={
-		Add-Content -Path $out_file -Value "Process kept suspended by user.";
-		$this.findform().close();
+		if ($listBox.SelectedItem -ne $null){
+			$outstr = "Process " + $listBox.SelectedItem + " kept suspended by user.";
+			Add-Content -Path $out_file -Value $outstr;
+			$listBox.Items.Remove($listBox.SelectedItem);
+			#$this.findform().close();
+		}
 	}
 
 	#resume/suspend form
@@ -349,6 +360,11 @@ function GenerateForm($processName,$processID,$parentProcessName) {
 	$suspendButton_drawingPoint.Y = $resumeButton_drawingPoint.Y;
 	$suspendButton.Location = $suspendButton_drawingPoint;
 
+	$listBox = New-Object System.Windows.Forms.ListBox
+	$listBox.Location = New-Object System.Drawing.Point(10,40)
+	$listBox.Size = New-Object System.Drawing.Size(600,40)
+	$listBox.Height = 80
+
 	#add event handlers to buttons
 	$closeFormButton.add_Click($handler_closeFormButton_Click);
 	$resumeButton.add_Click($handler_resumeButton_Click);
@@ -359,9 +375,10 @@ function GenerateForm($processName,$processID,$parentProcessName) {
 	$mainForm.Controls.Add($resumeButton);
 	$mainForm.Controls.Add($suspendButton);
 	$mainForm.Controls.Add($labelProcessRun);
-	$mainForm.Controls.Add($labelProcessID);
-	$mainForm.Controls.Add($labelParentProcessID);
-	$mainForm.Controls.Add($labelRunningProcess);
+	#$mainForm.Controls.Add($labelProcessID);
+	#$mainForm.Controls.Add($labelParentProcessID);
+	#$mainForm.Controls.Add($labelRunningProcess);
+	$mainForm.Controls.Add($listBox)
 
 	#If we call $mainForm.ShowDialog() to launch the form, the console and form will share the same thread.
 	#This means that the form will launch, and no further code of the powershell script will be processed run until the form closes.
@@ -383,7 +400,8 @@ function GenerateForm($processName,$processID,$parentProcessName) {
 
 	# open and run the runspace asynchronously
 	$AsyncResult = $PowerShellRunspace.BeginInvoke();
-}
+#}
+
 
 #
 # 5. Functionality to monitor newly created processes & interact with the suspend/resume functionality.
@@ -436,9 +454,9 @@ do
 		# TODO: extract powershell payload from command line - i.e. throw away command and options from $e.CommandLine and put it into Write-host
 	}
 
-	foreach ($item in $e){
-		Write-host "item:`t`t" $item;
-	}
+#	foreach ($item in $e){
+#		Write-host "item:`t`t" $item;
+#	}
 	
 	$parent_process=''; 
 	try {$proc=(Get-Process -id $e.ParentProcessID -ea stop); $parent_process=$proc.ProcessName;} catch {$parent_process='unknown';}
@@ -474,12 +492,15 @@ do
 	   	$tobechecked = $True;
 	   }
 
-	if (($tobeignored -match $True) -or ($tobechecked -match $False))
+	if (($tobeignored -match $True) -and ($tobechecked -match $False))
+	#if (($tobechecked -match $False))
 	{
 		Write-Host "Process ignored as per configuration.";
 	}else{
 		if(Suspend-Process -processID $e.ProcessId){
 			Write-Host "Process is suspended. Creating GUI popup.";
+			$outstr = "process " + $e.ProcessId + " has been suspended";
+			Add-Content -Path $out_file -Value $outstr;
 			if($reportfindings -match $True){
 				$cmdlen = $e.CommandLine.Length;
 				if ($cmdlen > 530) {
@@ -489,7 +510,12 @@ do
 				#Write-host "Reporting URL: " + $url;
 				$response = Invoke-WebRequest -URI $url
 				}
-			GenerateForm -processName $processName -processID $e.ProcessId -parentProcessName $parent_process -commandline $e.CommandLine;
+			if ($showPopup -eq $True){
+				#GenerateForm -processName $processName -processID $e.ProcessId -parentProcessName $parent_process -commandline $e.CommandLine;
+				$listItemText = $processName + " initiated by " + $parent_process + " (" + $e.ProcessId + ")";
+				#$listItemText = $e.ProcessId;
+				[void] $listBox.Items.Add($listItemText)
+				}
 		}else{
 			Write-Host "error during handling of suspicious process."
 		}
