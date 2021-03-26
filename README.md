@@ -54,6 +54,11 @@ Share your ideas! Here are some of mine...
 - ProcessBouncer might soon include an option to make some improvement to windows settings (registry keys, AttackSurfaceReductionRules, ...) when ProcessBouncer is started.
 - Self-defence of ProcessBouncer might also make sense.
 
+### implement your own statistics endpoint
+In order to collect statistics data for findings of ProcessBouncer you can make use of the mechanism already implemented. I save this data in a simple good old relational DB.
+
+<img src="./img/statendpoint_db.png" width="40%" />
+
 ## License and Credits
 license: this script is published under GPLv3 - please feel free to use and improve it.
 
