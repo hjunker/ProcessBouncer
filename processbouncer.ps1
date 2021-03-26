@@ -68,6 +68,9 @@ $suspiciousCmdLen = 20
 # Test the default for TimeSpan is (0,0,0,0,750). Shorter time spans can result in increased system load. Longer time spans can result in blind spots with regards to very short-lived processes (which might apply to malicious powershell calls). Handle with a lot of care.
 $new_process_check_interval = New-Object System.TimeSpan(0,0,0,0,750); #public TimeSpan (int days, int hours, int minutes, int seconds, int milliseconds);
 
+# bad hashes list / file(s) - this will soon be taken from a local file
+$badHashes = @("3803A81C05CAE8BAF87BD18DAB7DC590B8A2AC98789C3ADABCCED7BA26A36BFE", "13CE56C12DCCB52FEB4B01622D6440CC1934BA6F37F48A8FFA469DB3AE71BDDF", "13CE56C12DCCB52FEB4B01622D6440CC1934BA6F37F48A8FFA469DB3AE71BDDF");
+
 #
 # 2. setup - write some things to files from registry, ...
 #
@@ -451,7 +454,18 @@ do
 
 	if (($e.processName -eq "powershell.exe") -or ($e.processName -eq "powershell"))
 	{
-		# TODO: extract powershell payload from command line - i.e. throw away command and options from $e.CommandLine and put it into Write-host
+		# TODO: extract powershell payload from command line - i.e. throw away command and options
+		#$tmp = Write-host $e.CommandLine;
+		#Write-host "deobfuscated powershell script:`t`t" $tmp;
+	}
+
+	ForEach ($el in $badHashes)
+	{
+		if ($filehash -eq $el)
+		{
+			$tobechecked = $True;
+	   		Write-Host "-- badHashes match";
+		}
 	}
 
 #	foreach ($item in $e){
