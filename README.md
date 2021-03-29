@@ -26,6 +26,13 @@ Depending on your Windows version and various settings it might be necessary to 
 	...and confirm the dialogue.
 Please refer to https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.security/set-executionpolicy?view=powershell-6 for further information.
 
+### Enable Writing to Windows EventLog
+In order to enable ProcessBouncer to write to the windows EventLog, execute the following command as administrator:
+
+New-EventLog -LogName ProcessBouncer -Source "ProcessBouncer"
+
+You may choose an individual LogName, but remember to change $logname in the powershell script.
+
 ### Sign your ProcessBouncer script
 No matter whether you run ProcessBouncer as Administrator or a regular user, you should 
 allow your windows system(s) to execute only signed powershell scripts.
