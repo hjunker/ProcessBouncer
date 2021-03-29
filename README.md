@@ -1,8 +1,7 @@
 # ProcessBouncer
 ProcessBouncer is a PoC for blocking malware with a process-based approach. With a little fine-tuning this allows to effectively block most of current ransomware that is out there.
 
-## Run ProcessBouncer with default configuration
-IMPORTANT: Please read this entire README file before using ProcessBouncer. Check the section marked "1. settings (CONFIG section)" of processbouncer.ps1 for adjusting ProcessBouncer to your individual needs. The configuration in this section is pretty self-explanatory.
+## Running ProcessBouncer
 
 ProcessBouncer is basically a powershell script. Simply run processbouncer.ps1 to get started.
 
@@ -18,7 +17,7 @@ An alert pops up when a new process is created that ProcessBouncer categorizes a
 
 The user can then see some further information and (if he is allowed to by the admin's configuration/customization) make a decision on running / suspending / terminating the process.
 
-Simply running ProcessBouncer without customization might leave some risks and make you prone to false positives. But you can give it a try - preferably on a virtual test system that is not connected to production systems.
+Simply running ProcessBouncer without customization might leave some risks and make you prone to false positives. Check the section marked "1. settings (CONFIG section)" of processbouncer.ps1 for adjusting ProcessBouncer to your individual needs. The configuration in this section is pretty self-explanatory.
 
 ### ExecutionPolicy and Run as...
 Depending on your Windows version and various settings it might be necessary to run ProcessBouncer with Administrator's priviledges. If you run into the situation that you are not allowed running (unsigned) powershell scripts. Try running powershell as Administrator and type:
@@ -37,7 +36,7 @@ You may choose an individual LogName, but remember to change $logname in the pow
 No matter whether you run ProcessBouncer as Administrator or a regular user, you should 
 allow your windows system(s) to execute only signed powershell scripts.
 
-TODO: Well, I am gonna have to document this soon, maybe based on a writeup like this one: https://www.scriptinglibrary.com/languages/powershell/how-to-sign-a-powershell-script/
+Please refer to this site for further advice: https://www.scriptinglibrary.com/languages/powershell/how-to-sign-a-powershell-script/
 
 ### co-existence with other security software
 ProcessBouncer is mainly tested in combination with Windows Defender.
