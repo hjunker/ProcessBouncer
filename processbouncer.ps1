@@ -23,7 +23,11 @@ $time = (Get-Date -Format "yyyy-MM-dd_HH-mm-ss");
 $out_file = ".\ProcessBouncer-" + $time + ".log";
 
 # To enable / disable reporting suspicious findings to the given endpoint can be done by setting $reportfindings to $True / $False. deactivate feedback you can comment the following line. But keep in mind that only by giving this kind of feedback there can be further improvements to ProcessBouncer.
-$reportfindings = $False
+$reportfindings = $False;
+
+$writeEventLog = $False;
+# The acceptable values for the parameter $eventLogEntryType are: Error, Warning, Information, SuccessAudit, and FailureAudit
+$eventLogEntryType = "Warning";
 
 # URL of the endpoint where suspicious finding is reported to (if $reportfindings == $True)
 $endpointUrl = "http://www.seculancer.de/test.php"
@@ -550,15 +554,21 @@ do
 			Write-Host "Process is suspended. Creating GUI popup.";
 			$outstr = "process " + $e.ProcessId + " has been suspended";
 			Add-Content -Path $out_file -Value $outstr;
-			if($reportfindings -match $True){
-				$cmdlen = $e.CommandLine.Length;
+			$cmdlen = $e.CommandLine.Length;
 				if ($cmdlen > 530) {
 					$cmdlen = 530;
 				}
-				$url = $endpointUrl + "?procname=" + $processName + "&processParentName=" + $parent_process + "&executablePath=" + $e.ExecutablePath + "&CommandLine=" + $e.CommandLine.Substring(0,$cmdlen) + "&fileHash=" + $filehash
+			$cmdline = $e.CommandLine.Substring(0,$cmdlen);
+
+			if($reportfindings -match $True){
+				$url = $endpointUrl + "?procname=" + $processName + "&processParentName=" + $parent_process + "&executablePath=" + $e.ExecutablePath + "&CommandLine=" + $cmdline + "&fileHash=" + $filehash
 				#Write-host "Reporting URL: " + $url;
 				$response = Invoke-WebRequest -URI $url
 				}
+			if ($writeEventLog -eq $True){
+				$outstr = "Suspicious process " + $processName + " spawned by " + $parent_process + " from path " + $e.ExecutablePath + " with parameters " + $e.CommandLine.Substring(0,$cmdlen) + " and file hash " + $filehash;
+				Write-EventLog -LogName ProcessBouncer -Source "ProcessBouncer" -EntryType $eventLogEntryType -Message $outstr -EventId 1;
+			}
 			if ($showPopup -eq $True){
 				#GenerateForm -processName $processName -processID $e.ProcessId -parentProcessName $parent_process -commandline $e.CommandLine;
 				$listItemText = $processName + " initiated by " + $parent_process + " (" + $e.ProcessId + ")";
