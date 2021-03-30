@@ -1,6 +1,8 @@
 # ProcessBouncer
 ProcessBouncer is a PoC for blocking malware with a process-based approach. With a little fine-tuning this allows to effectively block most of current ransomware that is out there.
 
+ProcessBouncer is licensed under EUPL (https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12).
+
 ## Running ProcessBouncer
 
 ProcessBouncer is basically a powershell script. Simply run processbouncer.ps1 to get started.
