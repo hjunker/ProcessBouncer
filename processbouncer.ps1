@@ -481,7 +481,8 @@ do
 	$time = (Get-Date -UFormat "%A %B/%d/%Y %T");
 	Add-Content -Path $out_file -Value ($time + "|" + $e.ProcessId + "|" + $processName + "|" + $parent_process + "|" + $e.ExecutablePath + "|" + $filehash + "|" + $e.CommandLine);
 
-	$tobeignored = $False;
+	$tobeignoredProcess = $False;
+	$tobeignoredPath = $False;
 	$tobechecked = $False;
 
 	if ($True -eq $checkPowershellPayload)
@@ -512,7 +513,7 @@ do
 	{
 		if ($ignoredProcesses -match $processName)
 		{
-			$tobeignored = $True;
+			$tobeignoredProcess = $True;
 			Write-Host "-- ignoredProcesses match";
 		}
 	}
@@ -521,7 +522,7 @@ do
 	{
 		if ($null -ne ($whitelistedExecutablePaths | Where-Object { $e.ExecutablePath -match $_ }))
 		{
-			$tobeignored = $True;
+			$tobeignoredPath = $True;
 			Write-Host "-- whitelistedExecutablePaths match";
 		}
 	}
@@ -571,7 +572,10 @@ do
 	   	}
 	}
 
-	if (($tobechecked -match $False))
+	if (($tobeignoredProcess -match $True) -or
+		(($tobeignoredPath -match $True) -and ($tobechecked -match $False)) -or
+		($tobechecked -match $False)
+		)
 	{
 		Write-Host "Process ignored as per configuration.";
 	}else{
