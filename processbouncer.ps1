@@ -13,7 +13,7 @@
 #
 # 1. settings (CONFIG section)
 #
-
+#region settings
 $showPopup = $True
 $popupWidth=650;
 $popupScreenBorderDistance=20;
@@ -74,6 +74,7 @@ $new_process_check_interval = New-Object System.TimeSpan(0,0,0,0,750); #public T
 
 # bad hashes list / file(s) - this will soon be taken from a local file
 $badHashes = @("3803A81C05CAE8BAF87BD18DAB7DC590B8A2AC98789C3ADABCCED7BA26A36BFE", "13CE56C12DCCB52FEB4B01622D6440CC1934BA6F37F48A8FFA469DB3AE71BDDF", "13CE56C12DCCB52FEB4B01622D6440CC1934BA6F37F48A8FFA469DB3AE71BDDF");
+#endregion settings
 
 #
 # 2. setup - write some things to files from registry, ...
@@ -443,7 +444,7 @@ do
 	Write-host "PPID:`t`t" $e.ParentProcessID;
 	Write-host "ExecutablePath:`t`t" $e.ExecutablePath;
 	$filehash = "n/a";
-	if ($e.ExecutablePath -ne $Null)
+	if ($Null -ne $e.ExecutablePath)
 	{
 		$filehash = (Get-FileHash $e.ExecutablePath -Algorithm SHA256).Hash;
         #$filehash = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
@@ -498,7 +499,7 @@ do
 	}
 
 	if (
-		($null -ne ($whitelistedExecutablePaths | ? { $e.ExecutablePath -match $_ }))
+		($null -ne ($whitelistedExecutablePaths | Where-Object { $e.ExecutablePath -match $_ }))
 		)
 	{
 		$tobeignored = $True;
@@ -506,7 +507,7 @@ do
 	}
 
 	if (
-	   ($null -ne ($suspiciousProcesses | ? { $processName -match $_ }))
+	   ($null -ne ($suspiciousProcesses | Where-Object { $processName -match $_ }))
 	   )
 	   {
 	   	$tobechecked = $True;
@@ -522,7 +523,7 @@ do
 	   }
 
 	   if (
-	   ($null -ne ($suspiciousExecutablePaths | ? { $e.ExecutablePath -match $_ }))
+	   ($null -ne ($suspiciousExecutablePaths | Where-Object { $e.ExecutablePath -match $_ }))
 	   )
 	   {
 	   	$tobechecked = $True;
@@ -530,7 +531,7 @@ do
 	   }
 
 	   if (
-	   ($null -ne ($DoubleExtensions | ? { $e.ExecutablePath -match $_ }))
+	   ($null -ne ($DoubleExtensions | Where-Object { $e.ExecutablePath -match $_ }))
 	   )
 	   {
 	   	$tobechecked = $True;
@@ -555,7 +556,7 @@ do
 			$outstr = "process " + $e.ProcessId + " has been suspended";
 			Add-Content -Path $out_file -Value $outstr;
 			$cmdlen = $e.CommandLine.Length;
-				if ($cmdlen > 530) {
+				if ($cmdlen -gt 530) {
 					$cmdlen = 530;
 				}
 			$cmdline = $e.CommandLine.Substring(0,$cmdlen);
