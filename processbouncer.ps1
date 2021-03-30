@@ -14,6 +14,18 @@
 # 1. settings (CONFIG section)
 #
 #region settings
+# these variables let you enable/disable each kind of check
+$checkBadHashes = $False;
+$checkPowershellPayload = $False;
+$checkIgnoredProcesses = $True;
+$checkWhitelistedExecutablePaths = $True;
+$checkSuspiciousProcesses = $True;
+$checkSuspiciousParents = $True;
+$checkExecutablePaths = $True;
+$checkDoubleExtensions = $True;
+$checkCommandLineLength = $False;
+
+# gui settings
 $showPopup = $True
 $popupWidth=650;
 $popupScreenBorderDistance=20;
@@ -25,6 +37,7 @@ $out_file = ".\ProcessBouncer-" + $time + ".log";
 # To enable / disable reporting suspicious findings to the given endpoint can be done by setting $reportfindings to $True / $False. deactivate feedback you can comment the following line. But keep in mind that only by giving this kind of feedback there can be further improvements to ProcessBouncer.
 $reportfindings = $False;
 
+# if you want to enable Process Bouncer to write to Windows EventLog set this to $True - but check the README file's section 'Enable Writing to Windows EventLog' for setting this up
 $writeEventLog = $False;
 # The acceptable values for the parameter $eventLogEntryType are: Error, Warning, Information, SuccessAudit, and FailureAudit
 $eventLogEntryType = "Warning";
@@ -79,7 +92,7 @@ $badHashes = @("3803A81C05CAE8BAF87BD18DAB7DC590B8A2AC98789C3ADABCCED7BA26A36BFE
 #
 # 2. setup - write some things to files from registry, ...
 #
-
+#region setup
 Add-Content -Path $out_file -Value ($time + ' - ProcessBouncer starting...')
 
 # The following log data is written locally. It might be helpful for debugging yourself or if you need support from me.
@@ -133,12 +146,13 @@ Add-Content -Path $out_file -Value "---AUTORUN---";
 Add-Content -Path $out_file -Value (Get-ItemProperty HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\run);
 Add-Content -Path $out_file -Value "---NETFIREWALLRULES---";
 Add-Content -Path $out_file -Value (Get-NetFirewallRule -all);
-
+#endregion setup
 
 #
 # 3. Functionality to suspend and resume processes
 # Source of this function: Poshcode, Joel Bennett 
 #
+#region processhandling
 Add-Type -Name Threader -Namespace "" -Member @"
 	[Flags]
 	public enum ProcessAccess : uint
@@ -214,11 +228,12 @@ function Terminate-Process($processID) {
 		Write-Error "Unable to open process. Process doesn't exist anymore?"
 	}
 }
+#endregion processhandling
 
 #
 # 4. Functionality to create user interface popup dialog
 #
-
+#region gui
 #function GenerateForm($processName,$processID,$parentProcessName) {
 	[reflection.assembly]::loadwithpartialname("System.Windows.Forms") | Out-Null;
 	[reflection.assembly]::loadwithpartialname("System.Drawing") | Out-Null;
@@ -409,12 +424,13 @@ function Terminate-Process($processID) {
 	# open and run the runspace asynchronously
 	$AsyncResult = $PowerShellRunspace.BeginInvoke();
 #}
-
+#endregion gui
 
 #
 # 5. Functionality to monitor newly created processes & interact with the suspend/resume functionality.
 # 	 This makes use of Windows Management Instrumentation to get information about newly created processes.
 #
+#region checks
 
 #There is a bug in WqlEventQuery which occurs when the supplied time interval is too small and if your system locale is non-English (e.g. Belgian).
 #(relevant StackOverflow page: https://stackoverflow.com/questions/5953434/wmi-query-in-c-sharp-does-not-work-on-non-english-machine)
@@ -457,29 +473,9 @@ do
 	#Write-host "file properties:`t`t" $itemproperties;
 	Write-host "CommandLine:`t`t" $e.CommandLine;
 
-	if (($e.processName -eq "powershell.exe") -or ($e.processName -eq "powershell"))
-	{
-		# TODO: extract powershell payload from command line - i.e. throw away command and options
-		#$tmp = Write-host $e.CommandLine;
-		#Write-host "deobfuscated powershell script:`t`t" $tmp;
-	}
-
-	ForEach ($el in $badHashes)
-	{
-		if ($filehash -eq $el)
-		{
-			$tobechecked = $True;
-	   		Write-Host "-- badHashes match";
-		}
-	}
-
-#	foreach ($item in $e){
-#		Write-host "item:`t`t" $item;
-#	}
-	
 	$parent_process=''; 
 	try {$proc=(Get-Process -id $e.ParentProcessID -ea stop); $parent_process=$proc.ProcessName;} catch {$parent_process='unknown';}
-	Write-host "Parent name:`t" $parent_process; 
+	Write-host "Parent name:`t" $parent_process;
 	Write-host "CommandLine:`t" $e.CommandLine;
 
 	$time = (Get-Date -UFormat "%A %B/%d/%Y %T");
@@ -488,63 +484,92 @@ do
 	$tobeignored = $False;
 	$tobechecked = $False;
 
+	if ($true -eq $checkPowershellPayload)
+	{
+		if (($e.processName -eq "powershell.exe") -or ($e.processName -eq "powershell"))
+		{
+			# TODO: extract powershell payload from command line - i.e. throw away command and options
+			#$tmp = Write-host $e.CommandLine;
+			#Write-host "deobfuscated powershell script:`t`t" $tmp;
+		}
+	}
+
+	if ($True -eq $checkBadHashes)
+	{
+		ForEach ($el in $badHashes)
+		{
+			if ($filehash -eq $el)
+			{
+				$tobechecked = $True;
+	   			Write-Host "-- badHashes match";
+			}
+		}
+	}
+
 	# the following conditional statements can be tuned, extended, etc. to meet your specific requirements, minimize false positives, whitelist legitimate scripts and tools, ...
 	#if (-not ($ignoredProcesses -match $processName))
-	if (
-		($ignoredProcesses -match $processName)
-		)
+	if ($True -eq $checkIgnoredProcesses)
 	{
-		$tobeignored = $True;
-		Write-Host "-- ignoredProcesses match";
+		if ($ignoredProcesses -match $processName)
+		{
+			$tobeignored = $True;
+			Write-Host "-- ignoredProcesses match";
+		}
 	}
 
-	if (
-		($null -ne ($whitelistedExecutablePaths | Where-Object { $e.ExecutablePath -match $_ }))
-		)
+	if ($True -eq $checkWhitelistedExecutablePaths)
 	{
-		$tobeignored = $True;
-		Write-Host "-- whitelistedExecutablePaths match";
+		if ($null -ne ($whitelistedExecutablePaths | Where-Object { $e.ExecutablePath -match $_ }))
+		{
+			$tobeignored = $True;
+			Write-Host "-- whitelistedExecutablePaths match";
+		}
 	}
 
-	if (
-	   ($null -ne ($suspiciousProcesses | Where-Object { $processName -match $_ }))
-	   )
-	   {
-	   	$tobechecked = $True;
-	   	Write-Host "-- suspiciousProcesses match";
-	   }
+	if ($True -eq $checkSuspiciousProcesses)
+	{
+		if ($null -ne ($suspiciousProcesses | Where-Object { $processName -match $_ }))
+	   	{
+	   		$tobechecked = $True;
+	   		Write-Host "-- suspiciousProcesses match";
+	   	}
+	}
 
-	if (
-	   ($suspiciousParents -match $parent_process)
-	   )
-	   {
-	   	$tobechecked = $True;
-	   	Write-Host "-- suspiciousParents match";
-	   }
+	if ($True -eq $checkSuspiciousParents)
+	{
+		if ($suspiciousParents -match $parent_process)
+	   	{
+	   		$tobechecked = $True;
+	   		Write-Host "-- suspiciousParents match";
+	   	}
+	}
 
-	   if (
-	   ($null -ne ($suspiciousExecutablePaths | Where-Object { $e.ExecutablePath -match $_ }))
-	   )
-	   {
-	   	$tobechecked = $True;
-	   	Write-Host "-- suspiciousExecutablePaths match";
-	   }
+	if ($True -eq $checkExecutablePaths)
+	{
+		if ($null -ne ($suspiciousExecutablePaths | Where-Object { $e.ExecutablePath -match $_ }))
+	   	{
+	   		$tobechecked = $True;
+	   		Write-Host "-- suspiciousExecutablePaths match";
+	   	}
+	}
 
-	   if (
-	   ($null -ne ($DoubleExtensions | Where-Object { $e.ExecutablePath -match $_ }))
-	   )
-	   {
-	   	$tobechecked = $True;
-	   	Write-Host "-- doubleExtensions match";
-	   }
+	if ($True -eq $checkDoubleExtensions)
+	{
+		if ($null -ne ($DoubleExtensions | Where-Object { $e.ExecutablePath -match $_ }))
+	   	{
+	   		$tobechecked = $True;
+	   		Write-Host "-- doubleExtensions match";
+	   	}
+	}
 
-#	   if (
-#	   ($e.CommandLine.length -gt $suspiciousCmdLen)
-#	   )
-#	   {
-#	   	$tobechecked = $True;
-#	   	Write-Host "-- suspiciousCmdLen match";
-#	   }
+	if ($True -eq $checkCommandLineLength)
+	{
+		if ($e.CommandLine.length -gt $suspiciousCmdLen)
+	   	{
+	   		$tobechecked = $True;
+	   		Write-Host "-- suspiciousCmdLen match";
+	   	}
+	}
 
 	if (($tobeignored -match $True) -and ($tobechecked -match $False))
 	#if (($tobechecked -match $False))
@@ -584,3 +609,4 @@ do
 	Write-host "";
 	$processSpawnCounter += 1;
 } while ($True)
+#endregion checks
