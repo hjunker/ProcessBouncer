@@ -62,7 +62,7 @@ $suspiciousParents=@("WINWORD","WINWORD.EXE","EXCEL","EXCEL.EXE","powershell.exe
 $ignoredProcesses=@("chrome.exe","dllhost.exe","SearchProtocolHost.exe","SearchFilterHost.exe","taskhost.exe", "conhost.exe", "SearchProtocolHost", "SearchProtocolHost.exe", "backgroundTaskHost.exe", "RuntimeBroker.exe"); #these processes will never be suspended
 
 # these executable paths are considered suspicious. Handle with care
-$suspiciousExecutablePaths=@("C:\\Users");#, $env:TEMP,[System.IO.Path]::GetTempPath(),$env:USERPROFILE);
+$suspiciousExecutablePaths=@("C:\\Users", [System.IO.Path]::GetTempPath(), $env:USERPROFILE);
 
 # these whitelisted entries can skip detection e.g. for LotL tools! Handle with extreme care! Do not include things like C:\\Windows or C:\\WINDOWS\\system32 here!
 #$whitelistedExecutablePaths = @("---");
@@ -484,7 +484,7 @@ do
 	$tobeignored = $False;
 	$tobechecked = $False;
 
-	if ($true -eq $checkPowershellPayload)
+	if ($True -eq $checkPowershellPayload)
 	{
 		if (($e.processName -eq "powershell.exe") -or ($e.processName -eq "powershell"))
 		{
@@ -571,8 +571,7 @@ do
 	   	}
 	}
 
-	if (($tobeignored -match $True) -and ($tobechecked -match $False))
-	#if (($tobechecked -match $False))
+	if (($tobechecked -match $False))
 	{
 		Write-Host "Process ignored as per configuration.";
 	}else{
