@@ -19,6 +19,8 @@ An alert pops up when a new process is created that ProcessBouncer categorizes a
 
 The user can then see some further information and (if he is allowed to by the admin's configuration/customization) make a decision on running / suspending / terminating the process.
 
+For testing purposes, some .docm files are included in this repository. You can use these to fine-tune ProcessBouncer (especially $new_process_check_interval in the settings section) to make it fit your needs.
+
 Simply running ProcessBouncer without customization might leave some risks and make you prone to false positives. Check the section marked "1. settings (CONFIG section)" of processbouncer.ps1 for adjusting ProcessBouncer to your individual needs. The configuration in this section is pretty self-explanatory.
 
 ### ExecutionPolicy and Run as...
