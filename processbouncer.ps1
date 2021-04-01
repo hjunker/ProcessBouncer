@@ -83,7 +83,7 @@ ForEach ($e1 in $ext1)
 $suspiciousCmdLen = 20
 
 # Test the default for TimeSpan is (0,0,0,0,750). Shorter time spans can result in increased system load. Longer time spans can result in blind spots with regards to very short-lived processes (which might apply to malicious powershell calls). Handle with a lot of care.
-$new_process_check_interval = New-Object System.TimeSpan(0,0,0,0,750); #public TimeSpan (int days, int hours, int minutes, int seconds, int milliseconds);
+$new_process_check_interval = New-Object System.TimeSpan(0,0,0,0,600); #public TimeSpan (int days, int hours, int minutes, int seconds, int milliseconds);
 
 # bad hashes list / file(s) - this will soon be taken from a local file
 $badHashes = @("3803A81C05CAE8BAF87BD18DAB7DC590B8A2AC98789C3ADABCCED7BA26A36BFE", "13CE56C12DCCB52FEB4B01622D6440CC1934BA6F37F48A8FFA469DB3AE71BDDF", "13CE56C12DCCB52FEB4B01622D6440CC1934BA6F37F48A8FFA469DB3AE71BDDF");
@@ -215,7 +215,7 @@ function Resume-Process($processID) {
 }
 
 # TODO: Terminate suspicious processes instead of just keeping them suspended
-function Terminate-Process($processID) {
+function Stop-Process($processID) {
 	if(($pProc = [Threader]::OpenProcess("SuspendResume", $false, $processID)) -ne [IntPtr]::Zero){
 		Write-Host "Trying to terminate process: $processID"
 		Write-Host ""
@@ -264,6 +264,9 @@ function Terminate-Process($processID) {
 			[int]$processToResume=[convert]::ToInt32($selectedId);
 			$outstr = "Process " + $listBox.SelectedItem + " resumed by user.";
 			Add-Content -Path $out_file -Value $outstr;
+			if ($writeEventLog -eq $True){
+				Write-EventLog -LogName ProcessBouncer -Source "ProcessBouncer" -EntryType $eventLogEntryType -Message $outstr -EventId 1;
+			}
 			$listBox.Items.Remove($listBox.SelectedItem);
 			Resume-Process -processID $processToResume
 			#$this.findform().close();
@@ -273,6 +276,9 @@ function Terminate-Process($processID) {
 		if ($listBox.SelectedItem -ne $null){
 			$outstr = "Process " + $listBox.SelectedItem + " kept suspended by user.";
 			Add-Content -Path $out_file -Value $outstr;
+			if ($writeEventLog -eq $True){
+				Write-EventLog -LogName ProcessBouncer -Source "ProcessBouncer" -EntryType $eventLogEntryType -Message $outstr -EventId 1;
+			}
 			$listBox.Items.Remove($listBox.SelectedItem);
 			#$this.findform().close();
 		}
@@ -479,7 +485,11 @@ do
 	Write-host "CommandLine:`t" $e.CommandLine;
 
 	$time = (Get-Date -UFormat "%A %B/%d/%Y %T");
-	Add-Content -Path $out_file -Value ($time + "|" + $e.ProcessId + "|" + $processName + "|" + $parent_process + "|" + $e.ExecutablePath + "|" + $filehash + "|" + $e.CommandLine);
+	$outstr = $time + "|" + $e.ProcessId + "|" + $processName + "|" + $parent_process + "|" + $e.ExecutablePath + "|" + $filehash + "|" + $e.CommandLine;
+	Add-Content -Path $out_file -Value $outstr;
+	if ($writeEventLog -eq $True){
+		Write-EventLog -LogName ProcessBouncer -Source "ProcessBouncer" -EntryType $eventLogEntryType -Message $outstr -EventId 1;
+	}
 
 	$tobeignoredProcess = $False;
 	$tobeignoredPath = $False;
@@ -580,28 +590,25 @@ do
 		Write-Host "Process ignored as per configuration.";
 	}else{
 		if(Suspend-Process -processID $e.ProcessId){
-			Write-Host "Process is suspended. Creating GUI popup.";
-			$outstr = "process " + $e.ProcessId + " has been suspended";
-			Add-Content -Path $out_file -Value $outstr;
+			
 			$cmdlen = $e.CommandLine.Length;
 				if ($cmdlen -gt 530) {
 					$cmdlen = 530;
 				}
 			$cmdline = $e.CommandLine.Substring(0,$cmdlen);
 
+			$outstr = "Suspicious process " + $processName + " spawned by " + $parent_process + " from path " + $e.ExecutablePath + " with parameters " + $cmdline + " and file hash " + $filehash;
+			Add-Content -Path $out_file -Value $outstr;
+
 			if($reportfindings -match $True){
 				$url = $endpointUrl + "?procname=" + $processName + "&processParentName=" + $parent_process + "&executablePath=" + $e.ExecutablePath + "&CommandLine=" + $cmdline + "&fileHash=" + $filehash
-				#Write-host "Reporting URL: " + $url;
-				$response = Invoke-WebRequest -URI $url
+				$response = Invoke-WebRequest -URI $url;
 				}
 			if ($writeEventLog -eq $True){
-				$outstr = "Suspicious process " + $processName + " spawned by " + $parent_process + " from path " + $e.ExecutablePath + " with parameters " + $e.CommandLine.Substring(0,$cmdlen) + " and file hash " + $filehash;
 				Write-EventLog -LogName ProcessBouncer -Source "ProcessBouncer" -EntryType $eventLogEntryType -Message $outstr -EventId 1;
 			}
 			if ($showPopup -eq $True){
-				#GenerateForm -processName $processName -processID $e.ProcessId -parentProcessName $parent_process -commandline $e.CommandLine;
 				$listItemText = $processName + " initiated by " + $parent_process + " (" + $e.ProcessId + ")";
-				#$listItemText = $e.ProcessId;
 				[void] $listBox.Items.Add($listItemText)
 				}
 		}else{
