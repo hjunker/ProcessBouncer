@@ -1,5 +1,5 @@
 # ProcessBouncer
-ProcessBouncer is a PoC for blocking malware with a process-based approach. With a little fine-tuning this allows to effectively block most of current ransomware that is out there.
+ProcessBouncer is a simple but effective tool for blocking malware with a process-based approach. With a little fine-tuning this allows to effectively block most of current ransomware that is out there.
 
 ProcessBouncer is licensed under EUPL (https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12).
 
@@ -22,6 +22,10 @@ The user can then see some further information and (if he is allowed to by the a
 For testing purposes, some .docm files are included in this repository. You can use these to fine-tune ProcessBouncer (especially $new_process_check_interval in the settings section) to make it fit your needs.
 
 Simply running ProcessBouncer without customization might leave some risks and make you prone to false positives. Check the section marked "1. settings (CONFIG section)" of processbouncer.ps1 for adjusting ProcessBouncer to your individual needs. The configuration in this section is pretty self-explanatory.
+
+## important: liability statement
+
+The default configuration of ProcessBouncer has been created using best efforts for minimizing any negative impact on windows systems secured with this tool. Anyhow it can not be guaranteed that ProcessBouncer has not negative impact on (legitimate) processes on your system(s). This can happen when e.g. the configuration is changed or ProcessBouncer suspends a screen saver or driver components. Such scenarios regarding false positives should be tested on a non-productive system before deployment and the configuration of ProcessBouncer should be optimized for your specific needs. The authors and publishers of ProcessBouncer can not be held liable or responsible for any impact of the tool to your systems.
 
 ### ExecutionPolicy and Run as...
 Depending on your Windows version and various settings it might be necessary to run ProcessBouncer with Administrator's priviledges. If you run into the situation that you are not allowed running (unsigned) powershell scripts. Try running powershell as Administrator and type:
