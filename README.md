@@ -80,6 +80,6 @@ logo: © Can Stock Photo / Tribalium
 
 technical credits: the initial implementation was re-done based on the great script Process Spawn Control (PsC, [website](https://github.com/felixweyne/ProcessSpawnControl)) from Felix Weyne in 2018.
 
-Please also take a look at [ProcessBouncerService](https://github.com/Rotrixx/ProcessBouncerService) - an implementation of the same approach but as a windows service instead of a powershell script created by [@r0trixx](https://twitter.com/r0trixx) during his internship at my workplace in BSI.
+Please also take a look at [ProcessBouncerService](https://github.com/Rotrixx/ProcessBouncerService) - an implementation of the same approach but as a windows service instead of a powershell script created by [@r0trixx](https://twitter.com/r0trixx) during his internship at BSI.
 
 musical credits: the work based on Felix's code was mainly done while listening to the great music of Mono Inc (e.g. Children of the Dark or Voices of Doom).
